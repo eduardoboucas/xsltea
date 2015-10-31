@@ -1,0 +1,24 @@
+{
+  "name": "xsltea",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Eduardo Boucas <mail@eduardoboucas.com> (https://eduardoboucas.com/)",
+  "license": "MIT",
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-autoprefixer": "^3.0.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-load-plugins": "^1.0.0-rc.1",
+    "gulp-sass": "^2.0.4",
+    "gulp-uglify": "^1.4.1",
+    "gulp-watch": "^4.3.4"
+  },
+  "dependencies": {
+    "include-media": "^1.4.1",
+    "include-media-columns": "^1.1.0"
+  }
+}

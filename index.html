@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>XSL Tea</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	    <meta name="description" content="Demo project with jQuery">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<script src="js/vendor/codemirror.js"></script>
+		<script src="js/vendor/xml.js"></script>
+		<link rel="stylesheet" href="css/main.css">
+		<link rel="stylesheet" href="css/vendor/codemirror.css">
+		<link rel="stylesheet" href="css/vendor/base16-light.css">
+				
+	</head>
+	<body>
+			<div class="col col--1-2 screen-height">
+				<div class="panel">
+					<label for="code-xsl">XSL:</label>
+					<textarea id="code-xsl" name="xsl">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+    <xsl:import href="find-and-replace.xsl" />
+    <xsl:template match="/">
+		<xsl:variable name="oldest">
+			<xsl:value-of select="/people/person[@oldest = 'true']" />
+		</xsl:variable>
+		<xsl:variable name="name-replaced">
+			<xsl:call-template name="find-and-replace">
+				<xsl:with-param name="text" select="$oldest" />
+				<xsl:with-param name="replace" select="'Arthur'" />
+				<xsl:with-param name="by" select="'Senior Boob'" />
+			</xsl:call-template>
+		</xsl:variable>
+		<people>
+			<old-man><xsl:value-of select="$name-replaced"/></old-man>
+		</people>
+    </xsl:template>
+</xsl:stylesheet></textarea>
+				</div>
+				<div class="panel">
+					<label for="code-console">Console:</label>
+					<textarea id="code-console"></textarea>
+				</div>
+			</div>
+
+			<div class="col col--1-2 screen-height">
+				<div class="panel">
+					<label for="code-xml">XML:</label>
+					<textarea id="code-xml" name="xml">
+<people>
+  <person handle="ed" age="27">Eduardo Boucas</person>
+  <person handle="art" age="53" oldest="true">Arthur Mingard</person>
+</people></textarea>
+				</div>
+				<div class="panel">
+					<label for="code-output">Output:</label>
+					<textarea id="code-output" disabled></textarea>	
+				</div>	
+			</div>
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+		<script src="js/main.js"></script>
+	</body>
+</html>
