@@ -5,7 +5,7 @@ var xsltea = (function (CodeMirror) {
 			lineNumbers: true,
 			theme: 'base16-light'
 		},
-		apiUrl: 'http://xsltea-api.herokuapp.com'
+		apiUrl: 'https://xsltea-api.herokuapp.com'
 		//apiUrl: 'http://localhost/xsltea-api'
 	}
 
