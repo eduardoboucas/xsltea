@@ -19,7 +19,8 @@
 				<div class="panel">
 					<label class="panel__title" for="code-xsl">XSL</label>
 					<textarea id="code-xsl" name="xsl">
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+    <xsl:output method="html" />
     <xsl:import href="find-and-replace.xsl" />
     <xsl:template match="/">
 		<xsl:variable name="oldest">
@@ -32,9 +33,7 @@
 				<xsl:with-param name="by" select="'Senior Boob'" />
 			</xsl:call-template>
 		</xsl:variable>
-		<people>
-			<old-man><xsl:value-of select="$name-replaced"/></old-man>
-		</people>
+		<old-man><xsl:value-of select="$name-replaced"/></old-man>
     </xsl:template>
 </xsl:stylesheet></textarea>
 				</div>
