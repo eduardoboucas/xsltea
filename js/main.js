@@ -9,38 +9,76 @@ var xsltea = (function (CodeMirror) {
 		//apiUrl: 'http://localhost/xsltea-api'
 	}
 
-	var xmlTextArea = document.getElementById('code-xml');
-	var xslTextArea = document.getElementById('code-xsl');
-	var outputTextArea = document.getElementById('code-output');
-	var consoleTextArea = document.getElementById('code-console');
+	var editors = {
+		xml: {
+			id: 'code-xml',
+			config: {
+				lineNumbers: true
+			},
+			triggersChange: true
+		},
+		xsl: {
+			id: 'code-xsl',
+			config: {
+				lineNumbers: true
+			},
+			triggersChange: true
+		},
+		output: {
+			id: 'code-output',
+			config: {
+				lineNumbers: true,
+				readOnly: true
+			}
+		},
+		console: {
+			id: 'code-console',
+			config: {
+				lineNumbers: false,
+				readOnly: true,
+				mode: null
+			}
+		}
+	};
 
-	var xmlCodeMirror = CodeMirror.fromTextArea(xmlTextArea, config.codeMirror);
-	var xslCodeMirror = CodeMirror.fromTextArea(xslTextArea, config.codeMirror);
-	var outputCodeMirror = CodeMirror.fromTextArea(outputTextArea, config.codeMirror);
-	var consoleCodeMirror = CodeMirror.fromTextArea(consoleTextArea, config.codeMirror);
+	function init() {
+		// Build the editors
+		buildEditors(editors);
 
-	xmlCodeMirror.on('change', debounce(function (cm) {
+		// Initial parse
+		parse();
+	}
+
+	function buildEditors(editors) {
+		for (var key in editors) {
+			if (editors.hasOwnProperty(key)) {
+				editors[key].element = document.getElementById(editors[key].id);
+				editors[key].editor = CodeMirror.fromTextArea(editors[key].element, editors[key].config);
+
+				if ('triggersChange' in editors[key]) {
+					editors[key].editor.on('change', debounce(function (cm) {
+						processChange(cm);
+					}, config.changeDelay));
+				}
+			}
+		}
+	}
+
+	function processChange(cm) {
 		cm.save();
 
 		parse();
-	}, config.changeDelay));
-
-	xslCodeMirror.on('change', debounce(function (cm) {
-		cm.save();
-
-		parse();
-	}, config.changeDelay));
-
-	parse();
+	}
 
 	function writeToConsole(message) {
-		var current = consoleCodeMirror.getValue();
+		var current = editors.console.editor.getValue();
 
 		if (current.length) {
 			current = current + "\n";
 		}
 
-		consoleCodeMirror.setValue(current + message);
+		editors.console.editor.setValue(current + message);
+		editors.console.editor.execCommand('goPageDown');
 	}
 
 	function debounce(func, wait, immediate) {
@@ -63,8 +101,8 @@ var xsltea = (function (CodeMirror) {
 			type: 'POST',
 			url: config.apiUrl + '/parse',
 			data: {
-				xml: xmlTextArea.value,
-				xsl: xslTextArea.value
+				xml: editors.xml.element.value,
+				xsl: editors.xsl.element.value
 			},
 			success: function (data) {
 				processResult(data);
@@ -80,7 +118,7 @@ var xsltea = (function (CodeMirror) {
 			var parsedData = JSON.parse(data);
 
 			if ('result' in parsedData) {
-				outputCodeMirror.setValue(parsedData.result);
+				editors.output.editor.setValue(parsedData.result);
 
 				writeToConsole('Parsing complete in ' + parsedData.time + ' microseconds');
 			}			
@@ -93,8 +131,6 @@ var xsltea = (function (CodeMirror) {
 					if (parsedData.errors.hasOwnProperty(errorType)) {
 						errorMessage += errorType + " error:\n";
 
-						console.log(parsedData.errors[errorType])
-
 						for (var i = 0; i < parsedData.errors[errorType].length; i++) {
 							errorMessage += "--> " + parsedData.errors[errorType][i];
 						}
@@ -106,7 +142,6 @@ var xsltea = (function (CodeMirror) {
 		}
 	}
 
-	return {
-		writeToConsole: writeToConsole
-	}
+	// Initialise
+	init();
 })(CodeMirror);
