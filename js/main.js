@@ -1,13 +1,9 @@
 var xsltea = (function (CodeMirror) {
 	var config = {
 		changeDelay: 1500,
-		codeMirror: {
-			lineNumbers: true,
-			theme: 'base16-light'
-		},
 		apiUrl: 'https://xsltea-api.herokuapp.com'
 		//apiUrl: 'http://localhost/xsltea-api'
-	}
+	};
 
 	var editors = {
 		xml: {
@@ -45,8 +41,29 @@ var xsltea = (function (CodeMirror) {
 		// Build the editors
 		buildEditors(editors);
 
+		// Load from localStorage
+		loadFromLocalStorage();
+
+		// Binding events
+		bindEditorsEvents(editors);
+
 		// Initial parse
 		parse();
+	}
+
+	function saveToLocalStorage() {
+		localStorage.setItem('xml', editors.xml.element.value);
+		localStorage.setItem('xsl', editors.xsl.element.value);
+	}
+
+	function loadFromLocalStorage() {
+		if (localStorage.xml) {
+			editors.xml.editor.setValue(localStorage.xml);
+		}
+
+		if (localStorage.xsl) {
+			editors.xsl.editor.setValue(localStorage.xsl);
+		}
 	}
 
 	function buildEditors(editors) {
@@ -54,18 +71,26 @@ var xsltea = (function (CodeMirror) {
 			if (editors.hasOwnProperty(key)) {
 				editors[key].element = document.getElementById(editors[key].id);
 				editors[key].editor = CodeMirror.fromTextArea(editors[key].element, editors[key].config);
+			}
+		}
+	}
 
+	function bindEditorsEvents(editors) {
+		for (var key in editors) {
+			if (editors.hasOwnProperty(key)) {
 				if ('triggersChange' in editors[key]) {
 					editors[key].editor.on('change', debounce(function (cm) {
 						processChange(cm);
 					}, config.changeDelay));
 				}
 			}
-		}
+		}		
 	}
 
 	function processChange(cm) {
 		cm.save();
+
+		saveToLocalStorage();
 
 		parse();
 	}
