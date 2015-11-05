@@ -4,6 +4,9 @@ var xsltea = (function (CodeMirror) {
 		apiUrl: 'https://xsltea-api.herokuapp.com'
 		//apiUrl: 'http://localhost/xsltea-api'
 	};
+	var imports = {};
+	var pauseAutoUpdate = false;
+	var parsedXSL;
 
 	var editors = {
 		xml: {
@@ -32,7 +35,8 @@ var xsltea = (function (CodeMirror) {
 			config: {
 				lineNumbers: false,
 				readOnly: true,
-				mode: null
+				mode: null,
+				lineWrapping: true
 			}
 		}
 	};
@@ -48,12 +52,21 @@ var xsltea = (function (CodeMirror) {
 		bindEditorsEvents(editors);
 
 		// Initial parse
-		parse();
+		transform();
+
+		// Show server utilities in console
+		showServerUtilities();
 	}
 
+	/**
+	 *
+	 * Local Storage
+	 *
+	 */
 	function saveToLocalStorage() {
 		localStorage.setItem('xml', editors.xml.element.value);
 		localStorage.setItem('xsl', editors.xsl.element.value);
+		localStorage.setItem('imports', JSON.stringify(imports));
 	}
 
 	function loadFromLocalStorage() {
@@ -64,8 +77,75 @@ var xsltea = (function (CodeMirror) {
 		if (localStorage.xsl) {
 			editors.xsl.editor.setValue(localStorage.xsl);
 		}
+
+		if (localStorage.imports) {
+			try {
+				imports = JSON.parse(localStorage.imports);	
+			} catch (e) {
+				console.log('Error parsing import');
+			}
+		}
 	}
 
+	/**
+	 *
+	 * Ajax calls
+	 *
+	 */
+	function getServerUtilities(callback) {
+		$.get(config.apiUrl + '/utilities', function (data) {
+			try {
+				var parsedData = JSON.parse(data);
+
+				callback(parsedData);
+			} catch (e) {
+				console.log(e);
+			}
+		});
+	}
+
+	function transform() {
+		$.ajax({
+			type: 'POST',
+			url: config.apiUrl + '/parse',
+			data: {
+				xml: editors.xml.editor.getValue(),
+				xsl: editors.xsl.editor.getValue(),
+				import: imports
+			},
+			success: function (data) {
+				processResult(data);
+			},
+			error: function (data) {
+				processResult(data, true);
+			}
+		});
+	}		 
+	
+
+	/**
+	 *
+	 * Server-side utilities
+	 *
+	 */
+	function showServerUtilities() {
+		getServerUtilities(function (utilities) {
+			var consoleMessage = 'The following server-side utilities are available: ';
+
+			for (var i = 0; i < utilities.length; i++) {
+				consoleMessage += "\n --> " + utilities[i].path + ' (' + utilities[i].description + ' — ' + utilities[i].url + ')';
+			}
+
+			writeToConsole(consoleMessage);
+			writeToConsole('You can also include your own. Just drag an XSL file to the editor.');
+		});
+	}
+
+	/**
+	 *
+	 * Editors and events
+	 *
+	 */
 	function buildEditors(editors) {
 		for (var key in editors) {
 			if (editors.hasOwnProperty(key)) {
@@ -79,12 +159,43 @@ var xsltea = (function (CodeMirror) {
 		for (var key in editors) {
 			if (editors.hasOwnProperty(key)) {
 				if ('triggersChange' in editors[key]) {
-					editors[key].editor.on('change', debounce(function (cm) {
-						processChange(cm);
+					editors[key].editor.on('change', debounce(function (cm, event) {
+						console.log(event);
+						if (event.origin !== 'setValue') {
+							processChange(cm);	
+						}
 					}, config.changeDelay));
 				}
 			}
-		}		
+		}	
+
+		editors.xsl.editor.on('drop', function (cm, event) {
+			var file = event.dataTransfer.files[0];
+        	var reader = new FileReader();
+    
+    		reader.onload = function (event) {
+    			imports[file.name] = event.target.result;
+
+    			transform();
+    		};
+    		
+    		reader.readAsText(file);			
+
+			event.preventDefault();
+		});
+	}
+
+	function insertXSLImport(href) {
+		var parser = new DOMParser();
+		var serializer = new XMLSerializer();
+
+		var xslDoc = parser.parseFromString(editors.xsl.editor.getValue(), 'text/xml');
+		var importNode = xslDoc.createElement('xsl:import');
+		importNode.setAttribute('href', 'test.xsl');
+
+		xslDoc.documentElement.insertBefore(importNode, xslDoc.documentElement.childNodes[0]);
+
+		return serializer.serializeToString(xslDoc);
 	}
 
 	function processChange(cm) {
@@ -92,14 +203,16 @@ var xsltea = (function (CodeMirror) {
 
 		saveToLocalStorage();
 
-		parse();
+		if (!pauseAutoUpdate) {
+			transform();	
+		}
 	}
 
 	function writeToConsole(message) {
 		var current = editors.console.editor.getValue();
 
 		if (current.length) {
-			current = current + "\n";
+			current = current + "\n\n";
 		}
 
 		editors.console.editor.setValue(current + message);
@@ -121,29 +234,20 @@ var xsltea = (function (CodeMirror) {
 		};
 	}
 
-	function parse() {
-		$.ajax({
-			type: 'POST',
-			url: config.apiUrl + '/parse',
-			data: {
-				xml: editors.xml.element.value,
-				xsl: editors.xsl.element.value
-			},
-			success: function (data) {
-				processResult(data);
-			},
-			error: function (data) {
-				processResult(data, true);
-			}
-		});
-	}
-
 	function processResult(data, error) {
 		if (!error) {
 			var parsedData = JSON.parse(data);
 
+			for (var importName in imports) {
+				if (imports.hasOwnProperty(importName) && (parsedData.imports.indexOf(importName) == -1)) {
+					delete imports[importName];
+				}
+			}
+
 			if ('result' in parsedData) {
 				editors.output.editor.setValue(parsedData.result);
+
+				autoIndent(editors.output.editor);
 
 				writeToConsole('Parsing complete in ' + parsedData.time + ' microseconds');
 			}			
@@ -156,17 +260,46 @@ var xsltea = (function (CodeMirror) {
 					if (parsedData.errors.hasOwnProperty(errorType)) {
 						errorMessage += errorType + " error:\n";
 
-						for (var i = 0; i < parsedData.errors[errorType].length; i++) {
-							errorMessage += "--> " + parsedData.errors[errorType][i];
+						if (typeof parsedData.errors[errorType] === 'string') {
+							errorMessage += '--> ' + parsedData.errors[errorType];
+						} else {
+							for (var i = 0; i < parsedData.errors[errorType].length; i++) {
+								errorMessage += "--> " + parsedData.errors[errorType][i];
+							}							
 						}
 					}
 				}
 
 				writeToConsole(errorMessage);
 			}
+
+			editors.output.editor.setValue('');
 		}
+	}
+
+	function autoIndent(editor) {
+		return;
+		var lineCount = editor.lineCount();
+
+		pauseAutoUpdate = true;
+
+		for (var i = 1; i <= lineCount; i++) {
+			editor.indentLine(i);
+		}
+
+		pauseAutoUpdate = false;
 	}
 
 	// Initialise
 	init();
+
+	return {
+		editors: editors,
+		test: function () {
+			localStorage.removeItem('xml');
+			localStorage.removeItem('xsl');
+			localStorage.removeItem('imports');
+		},
+		imports: imports
+	}
 })(CodeMirror);

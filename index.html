@@ -19,19 +19,26 @@
 					<textarea id="code-xsl" name="xsl">
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
     <xsl:output method="html" />
-    <xsl:import href="find-and-replace.xsl" />
+    <xsl:import href="str/find-and-replace.xsl" />
     <xsl:template match="/">
-		<xsl:variable name="oldest">
-			<xsl:value-of select="/people/person[@oldest = 'true']" />
+		<xsl:variable name="ninja">
+			<xsl:choose>
+				<xsl:when test="/people/person[@job = 'ninja']">
+					<![CDATA[There it is! A ninja...]]>
+				</xsl:when>
+				<xsl:otherwise>
+					<![CDATA[There are no ninjas in the room]]>
+				</xsl:otherwise>
+			</xsl:choose>
 		</xsl:variable>
-		<xsl:variable name="name-replaced">
+		<xsl:variable name="message">
 			<xsl:call-template name="find-and-replace">
-				<xsl:with-param name="text" select="$oldest" />
-				<xsl:with-param name="replace" select="'Arthur'" />
-				<xsl:with-param name="by" select="'Senior Boob'" />
+				<xsl:with-param name="text" select="$ninja" />
+				<xsl:with-param name="replace" select="'is'" />
+				<xsl:with-param name="by" select="'was'" />
 			</xsl:call-template>
 		</xsl:variable>
-		<old-man><xsl:value-of select="$name-replaced"/></old-man>
+		<p><xsl:value-of select="$message"/></p>
     </xsl:template>
 </xsl:stylesheet></textarea>
 				</div>
@@ -52,7 +59,7 @@
 
 Welcome to XSL Tea, a XSLT web sandbox by @eduardoboucas
 
-Source at https://github.com/eduardoboucas/xsltea
+https://github.com/eduardoboucas/xsltea
 
 -----------------------------------------
 					</textarea>
@@ -64,8 +71,8 @@ Source at https://github.com/eduardoboucas/xsltea
 					<label class="panel__title" for="code-xml">XML</label>
 					<textarea id="code-xml" name="xml">
 <people>
-  <person handle="ed" age="27">Eduardo Boucas</person>
-  <person handle="art" age="53" oldest="true">Arthur Mingard</person>
+  <person job="ninja">Eduardo Boucas</person>
+  <person job="spy">Arthur Mingard</person>
 </people></textarea>
 				</div>
 				<div class="panel">
