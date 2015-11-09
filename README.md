@@ -24,4 +24,4 @@ This is the front-end layer for [XSL Tea](https://eduardoboucas.com/xsltea). The
 - [x] Transform XML with XSL
 - [x] Auto-update
 - [x] Persist state of editors in localStorage
-- [ ] Import utilities by drag and drop
+- [x] Import utilities by drag and drop
