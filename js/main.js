@@ -4,6 +4,7 @@ var xsltea = (function (CodeMirror) {
 		apiUrl: 'https://xsltea-api.herokuapp.com'
 		//apiUrl: 'http://localhost/xsltea-api'
 	};
+	var apiLoaded = false;
 	var imports = {};
 	var pauseAutoUpdate = false;
 	var parsedXSL;
@@ -120,8 +121,7 @@ var xsltea = (function (CodeMirror) {
 				processResult(data, true);
 			}
 		});
-	}		 
-	
+	}
 
 	/**
 	 *
@@ -162,24 +162,24 @@ var xsltea = (function (CodeMirror) {
 					editors[key].editor.on('change', debounce(function (cm, event) {
 						console.log(event);
 						if (event.origin !== 'setValue') {
-							processChange(cm);	
+							processChange(cm);
 						}
 					}, config.changeDelay));
 				}
 			}
-		}	
+		}
 
 		editors.xsl.editor.on('drop', function (cm, event) {
 			var file = event.dataTransfer.files[0];
         	var reader = new FileReader();
-    
+
     		reader.onload = function (event) {
     			imports[file.name] = event.target.result;
 
     			transform();
     		};
-    		
-    		reader.readAsText(file);			
+
+    		reader.readAsText(file);
 
 			event.preventDefault();
 		});
@@ -204,7 +204,7 @@ var xsltea = (function (CodeMirror) {
 		saveToLocalStorage();
 
 		if (!pauseAutoUpdate) {
-			transform();	
+			transform();
 		}
 	}
 
@@ -235,6 +235,12 @@ var xsltea = (function (CodeMirror) {
 	}
 
 	function processResult(data, error) {
+		if (!apiLoaded) {
+			apiLoaded = true;
+
+			$('body').removeClass('loading');
+		}
+
 		if (!error) {
 			var parsedData = JSON.parse(data);
 
@@ -250,7 +256,7 @@ var xsltea = (function (CodeMirror) {
 				autoIndent(editors.output.editor);
 
 				writeToConsole('Parsing complete in ' + parsedData.time + ' microseconds');
-			}			
+			}
 		} else {
 			var parsedData = JSON.parse(data.responseText);
 			var errorMessage = '';
@@ -265,7 +271,7 @@ var xsltea = (function (CodeMirror) {
 						} else {
 							for (var i = 0; i < parsedData.errors[errorType].length; i++) {
 								errorMessage += "--> " + parsedData.errors[errorType][i];
-							}							
+							}
 						}
 					}
 				}
