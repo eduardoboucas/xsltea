@@ -15,7 +15,7 @@
 
 ```
 
-> A sandbox environment for XSLT
+> A web-based playground for XSLT
 
 This is the front-end layer for [XSL Tea](https://eduardoboucas.com/xsltea). The API layer is running on Heroku and can be found [here](https://github.com/eduardoboucas/xsltea-api).
 
@@ -25,3 +25,4 @@ This is the front-end layer for [XSL Tea](https://eduardoboucas.com/xsltea). The
 - [x] Auto-update
 - [x] Persist state of editors in localStorage
 - [x] Import utilities by drag and drop
+- [ ] Persist state of editors to database and generate permalinks
